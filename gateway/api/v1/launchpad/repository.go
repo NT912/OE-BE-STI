@@ -26,6 +26,11 @@ func (r *LaunchpadRepository) FindByID(id uint) (*models.Launchpad, error) {
 	return &lp, err
 }
 
+func (r *LaunchpadRepository) Update(lp *models.Launchpad) error {
+	// update UpdatedAt automatically via Save
+	return r.db.Save(lp).Error
+}
+
 func (r *LaunchpadRepository) FindAllByStatus(status models.LaunchpadStatus) ([]models.Launchpad, error) {
 	var list []models.Launchpad
 	err := r.db.Preload("Course").Preload("VotingPlans", func(db *gorm.DB) *gorm.DB {
