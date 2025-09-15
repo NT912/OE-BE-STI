@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"gateway/api/v1/users"
-	wallets "gateway/api/v1/wallet"
+	wallets "gateway/api/v1/wallets"
 
 	"github.com/gin-gonic/gin"
 )

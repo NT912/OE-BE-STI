@@ -3,10 +3,8 @@ package routes
 import (
 	v1 "gateway/api/v1"
 	"gateway/api/v1/auth"
-	"gateway/api/v1/courses"
 	"gateway/api/v1/users"
 	wallets "gateway/api/v1/wallet"
-
 	"gateway/middlewares"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +20,6 @@ func InitRouter() *gin.Engine {
 	wallets.InitModule()
 	users.InitModule(r)
 	auth.InitModule(r)
-	courses.InitModule(r)
 
 	return r
 }

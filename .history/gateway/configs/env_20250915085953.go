@@ -45,4 +45,5 @@ func printEnvError(err error) {
 			fmt.Println(strings.TrimSpace(line))
 		}
 	}
+
 }

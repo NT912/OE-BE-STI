@@ -3,7 +3,6 @@ package auth
 import (
 	"gateway/api/v1/users"
 	wallets "gateway/api/v1/wallet"
-
 	"gateway/configs"
 
 	"github.com/gin-gonic/gin"
