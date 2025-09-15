@@ -1,3 +1,0 @@
-package lauchpad
-
-func InitModule()
