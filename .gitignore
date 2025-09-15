@@ -46,3 +46,4 @@ tmp/
 .env
 .env.*
 !.env.example
+/.history
