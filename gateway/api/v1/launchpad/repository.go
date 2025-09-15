@@ -17,3 +17,20 @@ func NewLaunchpadRepository(db *gorm.DB) *LaunchpadRepository {
 func (r *LaunchpadRepository) Create(lp *models.Launchpad) error {
 	return r.db.Create(lp).Error
 }
+
+func (r *LaunchpadRepository) FindByID(id uint) (*models.Launchpad, error) {
+	var lp models.Launchpad
+	err := r.db.Preload("Course").Preload("VotingPlans", func(db *gorm.DB) *gorm.DB {
+		return db.Order("step asc")
+	}).First(&lp, id).Error
+	return &lp, err
+}
+
+func (r *LaunchpadRepository) FindAllByStatus(status models.LaunchpadStatus) ([]models.Launchpad, error) {
+	var list []models.Launchpad
+	err := r.db.Preload("Course").Preload("VotingPlans", func(db *gorm.DB) *gorm.DB {
+		return db.Order("step asc")
+	}).Where("status = ? AND approved = ?", status, true).Find(&list).Error
+
+	return list, err
+}
