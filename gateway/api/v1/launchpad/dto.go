@@ -6,7 +6,7 @@ type CreateLaunchpadDTO struct {
 	Title       string                `json:"title" binding:"required,max=255"`
 	Description string                `json:"description"`
 	FundingGoal float64               `json:"funding_goal" binding:"required,gt=0"`
-	VotingPlan  []VotingGoalCreateDTO `json:"voting_plan"`
+	VotingPlans []VotingGoalCreateDTO `json:"voting_plan"`
 }
 
 type VotingGoalCreateDTO struct {
