@@ -15,6 +15,7 @@ func NewCourseRepository(db *gorm.DB) *CourseRepository {
 		db: db,
 	}
 }
+
 func (r *CourseRepository) Create(course *models.Course) error {
 	return r.db.Create(course).Error
 }

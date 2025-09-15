@@ -13,14 +13,6 @@ const (
 	CoursePreview CourseStatus = "preview"
 )
 
-type Investment struct {
-	TotalInvestment float64 `gorm:"default:0" json:"total_investment"`
-	Currency        string  `gorm:"default:'USDT'" json:"currency"`
-	Investors       int     `gorm:"default:0" json:"investors"`
-	Progress        float64 `gorm:"default:0" json:"progress"` // 0% -> 100%
-	Goal            float64 `gorm:"not null" json:"goal"`      // Mục tiêu đầu tư
-}
-
 type Course struct {
 	gorm.Model
 	Name             string         `gorm:"size:255;not null" json:"name"`
@@ -36,18 +28,6 @@ type Course struct {
 	Lecturer         *User          `gorm:"foreignKey=LecturerId" json:"lecturer"`
 	Status           CourseStatus   `sql:"type:ENUM('draft', 'publish', 'preview')" gorm:"column:status"`
 
-	Investment Investment `gorm:"embedded" json:"investment"`
-	Version    string     `gorm:"size:50" json:"version"`
-	IsPublish  bool       `gorm:"default:false" json:"is_publish"`
-}
-
-func (c *Course) BeforeCreate(tx *gorm.DB) error {
-	if c.Status == "" {
-		c.Status = CourseDraft // Mặc định là draft khi tạo
-	}
-	if c.Version == "" {
-		c.Version = "v1.0" // Mặc định là version v1.0 khi tạo mới
-	}
-
-	return nil
+	Version   string `gorm:"size:50" json:"version"`
+	IsPublish bool   `gorm:"default:false" json:"is_publish"`
 }

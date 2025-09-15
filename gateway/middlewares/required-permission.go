@@ -1,8 +1,9 @@
 package middlewares
 
 import (
-	"gateway/guards"
 	"net/http"
+
+	"gateway/guards"
 
 	"github.com/gin-gonic/gin"
 )
