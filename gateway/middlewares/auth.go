@@ -1,6 +1,8 @@
 package middlewares
 
 import (
+	"fmt"
+
 	"gateway/configs"
 
 	"github.com/gin-gonic/gin"
@@ -9,7 +11,6 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		tokenString, err := c.Cookie("jwt")
 		if err != nil {
 			c.Error(err)
@@ -18,7 +19,6 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
-
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
@@ -31,9 +31,13 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			c.Set("user_id", claims["user_id"])
+			fmt.Printf("Decoded JWT claims: %#v\n", claims)
+			c.Set("user_id", uint(claims["user_id"].(float64)))
 			c.Set("email", claims["email"])
 			c.Set("name", claims["name"])
+			if role, ok := claims["role"].(string); ok {
+				c.Set("role", role) // ✅ lấy role từ JWT
+			}
 		}
 
 		c.Next()

@@ -76,6 +76,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		UserID: user.ID,
 		Name:   user.Name,
 		Email:  user.Email,
+		Role:   user.Role,
 	})
 	if err != nil {
 		ctx.Error(err)

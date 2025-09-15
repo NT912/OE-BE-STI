@@ -11,4 +11,5 @@ type User struct {
 	Password string `gorm:"size:255;not null" json:"-"`
 
 	Wallet *Wallet `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID"`
+	Role   string  `json:"role" gorm:"default:user"`
 }

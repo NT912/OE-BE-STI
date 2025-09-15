@@ -28,6 +28,7 @@ type Course struct {
 	Lecturer         *User          `gorm:"foreignKey=LecturerId" json:"lecturer"`
 	Status           CourseStatus   `sql:"type:ENUM('draft', 'publish', 'preview')" gorm:"column:status"`
 
-	Version   string `gorm:"size:50" json:"version"`
-	IsPublish bool   `gorm:"default:false" json:"is_publish"`
+	Version   string  `gorm:"size:50" json:"version"`
+	IsPublish bool    `gorm:"default:false" json:"is_publish"`
+	Goal      float64 `gorm:"not null;default:0" json:"goal"`
 }

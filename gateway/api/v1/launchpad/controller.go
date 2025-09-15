@@ -3,6 +3,9 @@ package launchpad
 import (
 	"net/http"
 
+	"gateway/guards"
+	"gateway/middlewares"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,6 +21,17 @@ func (c *LaunchpadController) RegisterRoutes(r *gin.RouterGroup) {
 	lpRoutes := r.Group("/launchpads")
 	{
 		lpRoutes.GET("/")
+	}
+
+	// authentication actions
+	lpRoutesAuth := r.Group("/launchpads")
+	lpRoutesAuth.Use(middlewares.AuthMiddleware())
+	{
+		// create & admin actions require permission
+		lpRoutesAuth.POST("/", middlewares.RequirePermission(guards.PermCourseCRUD), c.CreateLaunchpad)
+		lpRoutesAuth.POST("/:id/approve", middlewares.RequirePermission(guards.PermCourseCRUD))
+
+		// invest: any logged-in user can invest (as you wanted)
 	}
 }
 

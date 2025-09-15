@@ -2,9 +2,10 @@ package auth
 
 import (
 	"fmt"
-	"gateway/configs"
 	"strconv"
 	"time"
+
+	"gateway/configs"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -28,6 +29,7 @@ func (s *AuthService) GenerateJWT(payload JWTPayload) (string, error) {
 		"user_id": payload.UserID,
 		"name":    payload.Name,
 		"email":   payload.Email,
+		"role":    payload.Role,
 		"exp":     time.Now().Add(time.Duration(expiredHours) * time.Hour).Unix(),
 		"iat":     time.Now().Unix(),
 	}

@@ -1,9 +1,11 @@
 package courses
 
 import (
+	"fmt"
+	"net/http"
+
 	"gateway/guards"
 	"gateway/middlewares"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,7 +34,11 @@ func (c *CourseController) CreateCourse(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	course, err := c.service.CreateCourse(dto)
+
+	lecturerID := ctx.GetUint("user_id")
+	fmt.Println("LecturerID from context:", lecturerID)
+
+	course, err := c.service.CreateCourse(dto, lecturerID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
