@@ -79,6 +79,24 @@ func (s *LaunchpadService) GetLaunchpads() ([]models.Launchpad, error) {
 	return s.repo.FindAll(true)
 }
 
+func (s *LaunchpadService) ApproveLaunchpad(id uint) (*models.Launchpad, error) {
+	// Find the launchpad first
+	launchpad, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// update the approved status
+	launchpad.Approved = true
+
+	// save the changes
+	if err := s.repo.Update(launchpad); err != nil {
+		return nil, err
+	}
+
+	return launchpad, nil
+}
+
 // Goal will be input by investor
 func calculateStatus(goal, funded float64) models.LaunchpadStatus {
 	if funded <= 0 || goal <= 0 {

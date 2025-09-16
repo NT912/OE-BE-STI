@@ -32,7 +32,7 @@ func (c *LaunchpadController) RegisterRoutes(r *gin.RouterGroup) {
 	{
 		// create & admin actions require permission
 		lpRoutesAuth.POST("/", middlewares.RequirePermission(guards.PermCourseCRUD), c.CreateLaunchpad)
-		lpRoutesAuth.POST("/:id/approve", middlewares.RequirePermission(guards.PermCourseCRUD))
+		lpRoutesAuth.POST("/:id/approve", middlewares.RequirePermission(guards.PermCourseCRUD), c.ApproveLaunchpad)
 
 		// invest: any logged-in user can invest (as you wanted)
 	}
@@ -92,4 +92,31 @@ func (c *LaunchpadController) GetLaunchpads(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, launchpads)
+}
+
+func (c *LaunchpadController) ApproveLaunchpad(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid launchpad",
+		})
+		return
+	}
+
+	launchpad, err := c.service.ApproveLaunchpad(uint(id))
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"error": "launchpad not found",
+			})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, launchpad)
 }
