@@ -1,6 +1,7 @@
 package courses
 
 import (
+	coursesCategory "gateway/api/v1/courses/categories"
 	"gateway/configs"
 	"gateway/models"
 
@@ -16,7 +17,7 @@ import (
 func InitModule(r *gin.Engine) {
 	db := configs.DB
 	if configs.Env.AppEnv != "production" {
-		db.AutoMigrate(&models.Course{})
+		db.AutoMigrate(&models.Course{}, &models.CourseCategory{}, &models.CourseSection{}, &models.CourseLesson{})
 	}
 
 	CourseRepo := NewCourseRepository(db)
@@ -25,4 +26,9 @@ func InitModule(r *gin.Engine) {
 
 	api := r.Group("/api/v1")
 	controller.RegisterRoutes(api)
+
+	CourseCategoryRepo := coursesCategory.NewCourseCategoryRepository(db)
+	CourseCategorySvc := coursesCategory.NewCourseCategoryService(CourseCategoryRepo)
+	courseCategoryController := coursesCategory.NewCourseCategoryController(CourseCategorySvc)
+	courseCategoryController.RegisterRoutes(api)
 }

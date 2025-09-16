@@ -2,11 +2,13 @@ package launchpad
 
 import (
 	"net/http"
+	"strconv"
 
 	"gateway/guards"
 	"gateway/middlewares"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type LaunchpadController struct {
@@ -21,6 +23,7 @@ func (c *LaunchpadController) RegisterRoutes(r *gin.RouterGroup) {
 	lpRoutes := r.Group("/launchpads")
 	{
 		lpRoutes.GET("/")
+		lpRoutes.GET("/:id", c.GetLaunchpadByID)
 	}
 
 	// authentication actions
@@ -51,4 +54,30 @@ func (c *LaunchpadController) CreateLaunchpad(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusCreated, lp)
+}
+
+func (c *LaunchpadController) GetLaunchpadByID(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid launchpad",
+		})
+		return
+	}
+
+	launchpad, err := c.service.GetLaunchpadByID(uint(id))
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"error": "launchpad not found",
+			})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, launchpad)
 }

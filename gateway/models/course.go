@@ -10,7 +10,6 @@ type CourseStatus string
 const (
 	CourseDraft   CourseStatus = "draft"
 	CoursePublish CourseStatus = "publish"
-	CoursePreview CourseStatus = "preview"
 )
 
 type Course struct {
@@ -26,9 +25,8 @@ type Course struct {
 	IsCompleted      bool           `gorm:"default:false" json:"is_completed"`
 	LecturerId       uint           `json:"lecturer_id"`
 	Lecturer         *User          `gorm:"foreignKey=LecturerId" json:"lecturer"`
-	Status           CourseStatus   `sql:"type:ENUM('draft', 'publish', 'preview')" gorm:"column:status"`
+	Status           CourseStatus   `sql:"type:ENUM('draft', 'publish')" gorm:"column:status"`
 
-	Version   string  `gorm:"size:50" json:"version"`
-	IsPublish bool    `gorm:"default:false" json:"is_publish"`
-	Goal      float64 `gorm:"not null;default:0" json:"goal"`
+	Version   string `gorm:"size:50" json:"version"`
+	IsPublish bool   `gorm:"default:false" json:"is_publish"`
 }

@@ -2,10 +2,11 @@ package courses
 
 import (
 	"fmt"
-	"net/http"
-
 	"gateway/guards"
 	"gateway/middlewares"
+	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,24 +26,110 @@ func (c *CourseController) RegisterRoutes(r *gin.RouterGroup) {
 	courseRoutes.Use(middlewares.AuthMiddleware())
 	{
 		courseRoutes.POST("/", middlewares.RequirePermission(guards.PermCourseCRUD), c.CreateCourse)
+		courseRoutes.PUT("/:id", middlewares.RequirePermission(guards.PermCourseCRUD), c.UpdateCourseInfo)
+		courseRoutes.PUT("/:id/publish", middlewares.RequirePermission(guards.PermCourseCRUD), c.PublishCourse)
 	}
 }
 
 func (c *CourseController) CreateCourse(ctx *gin.Context) {
 	var dto CreateCourseDTO
+	userIdValue, _ := ctx.Get("userId")
+
+	userId, ok := userIdValue.(uint)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid userId type"})
+		return
+	}
+
 	if err := ctx.ShouldBindJSON(&dto); err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	lecturerID := ctx.GetUint("user_id")
-	fmt.Println("LecturerID from context:", lecturerID)
-
-	course, err := c.service.CreateCourse(dto, lecturerID)
+	course, err := c.service.CreateCourse(dto, userId)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	ctx.JSON(http.StatusCreated, course)
+}
+
+func (c *CourseController) UpdateCourseInfo(ctx *gin.Context) {
+	courseIdStr := ctx.Param("id")
+	courseId, err := strconv.Atoi(courseIdStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course id"})
+		return
+	}
+
+	userIdValue, _ := ctx.Get("userId")
+	// roleValue, _ := ctx.Get("role")
+	userId := userIdValue.(uint)
+	// role := roleValue.(string)
+
+	category := ctx.PostForm("category")
+	level := ctx.PostForm("level")
+
+	var bannerPath string
+	bannerFile, err := ctx.FormFile("banner")
+	if err == nil {
+		bannerPath = fmt.Sprintf("uploads/banner/%d_%s", time.Now().Unix(), bannerFile.Filename)
+		if err := ctx.SaveUploadedFile(bannerFile, bannerPath); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save banner"})
+			return
+		}
+	}
+
+	var videoPath string
+	videoFile, err := ctx.FormFile("video_preview")
+	if err == nil {
+		videoPath = fmt.Sprintf("uploads/videos/%d_%s", time.Now().Unix(), videoFile.Filename)
+		if err := ctx.SaveUploadedFile(videoFile, videoPath); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save video preview"})
+			return
+		}
+	}
+
+	updateData := map[string]interface{}{
+		"banner":        bannerPath,
+		"video_preview": videoPath,
+		"category":      category,
+		"level":         level,
+	}
+
+	//TODO: update role
+	updatedCourse, err := c.service.UpdateCourseInfo(uint(courseId), updateData, userId, "admin")
+	if err != nil {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, updatedCourse)
+}
+
+func (c *CourseController) PublishCourse(ctx *gin.Context) {
+	courseIdStr := ctx.Param("id")
+	courseId, err := strconv.Atoi(courseIdStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course id"})
+		return
+	}
+	var body PublishCourseDTO
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	course, err := c.service.TogglePublishCourse(uint(courseId), body.IsPublish)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Course status updated successfully",
+		"data":    course,
+	})
 }

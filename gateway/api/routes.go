@@ -6,8 +6,7 @@ import (
 	"gateway/api/v1/courses"
 	"gateway/api/v1/launchpad"
 	"gateway/api/v1/users"
-	wallets "gateway/api/v1/wallet"
-
+	"gateway/api/v1/wallets"
 	"gateway/middlewares"
 
 	"github.com/gin-gonic/gin"

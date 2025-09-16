@@ -1,9 +1,8 @@
 package middlewares
 
 import (
-	"fmt"
-
 	"gateway/configs"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -11,6 +10,7 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+
 		tokenString, err := c.Cookie("jwt")
 		if err != nil {
 			c.Error(err)
@@ -19,6 +19,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
@@ -31,13 +32,21 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			fmt.Printf("Decoded JWT claims: %#v\n", claims)
-			c.Set("user_id", uint(claims["user_id"].(float64)))
+			var userId uint
+			switch v := claims["user_id"].(type) {
+			case float64:
+				userId = uint(v)
+			case string:
+				if id, err := strconv.ParseUint(v, 10, 32); err == nil {
+					userId = uint(id)
+				}
+			case int:
+				userId = uint(v)
+			}
+
+			c.Set("userId", userId)
 			c.Set("email", claims["email"])
 			c.Set("name", claims["name"])
-			if role, ok := claims["role"].(string); ok {
-				c.Set("role", role) // ✅ lấy role từ JWT
-			}
 		}
 
 		c.Next()

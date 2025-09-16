@@ -25,6 +25,6 @@ type Launchpad struct {
 	Backers      int             `json:"backers"`
 	Status       LaunchpadStatus `gorm:"type:varchar(20)" json:"status"`
 	Approved     bool            `gorm:"default:false" json:"approved"`
-	VotingPlan   []VotingPlan    `gorm:"foreignKey:LaunchpadID" json:"voting_plan,omitempty"`
+	VotingPlans  []VotingPlan    `gorm:"foreignKey:LaunchpadID" json:"voting_plan,omitempty"`
 	NextVotingAt *time.Time      `json:"next_voting_at,omitempty"`
 }

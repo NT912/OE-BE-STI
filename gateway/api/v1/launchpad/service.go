@@ -26,6 +26,7 @@ func (s *LaunchpadService) CreateLaunchpad(dto CreateLaunchpadDTO) (*models.Laun
 		return nil, errors.New("Course not found")
 	}
 
+	// Create Launchpad object
 	lp := &models.Launchpad{
 		CourseID:    dto.CourseID,
 		Title:       dto.Title,
@@ -37,6 +38,10 @@ func (s *LaunchpadService) CreateLaunchpad(dto CreateLaunchpadDTO) (*models.Laun
 		Status:      models.LaunchpadUpcoming,
 	}
 
+	if err := s.repo.Create(lp); err != nil {
+		return nil, err
+	}
+
 	// create voting plans if provided
 	if len(dto.VotingPlans) > 0 {
 		var plans []models.VotingPlan
@@ -46,10 +51,11 @@ func (s *LaunchpadService) CreateLaunchpad(dto CreateLaunchpadDTO) (*models.Laun
 				return nil, parseErr
 			}
 			plans = append(plans, models.VotingPlan{
-				Step:       p.Step,
-				Sections:   p.Sections,
-				ScheduleAt: t,
-				Title:      p.Title,
+				LaunchpadID: lp.ID,
+				Step:        p.Step,
+				Sections:    p.Sections,
+				ScheduleAt:  t,
+				Title:       p.Title,
 			})
 		}
 		if err := s.repo.CreateVotingPlans(lp.ID, plans); err != nil {
@@ -63,6 +69,10 @@ func (s *LaunchpadService) CreateLaunchpad(dto CreateLaunchpadDTO) (*models.Laun
 	}
 
 	return s.repo.FindByID(lp.ID)
+}
+
+func (s *LaunchpadService) GetLaunchpadByID(id uint) (*models.Launchpad, error) {
+	return s.repo.FindByID(id)
 }
 
 // Goal will be input by investor
@@ -79,17 +89,17 @@ func calculateStatus(goal, funded float64) models.LaunchpadStatus {
 
 func parseDateFlexible(s string) (time.Time, error) {
 	// try ISO YYYY-MM-DD
-	if t, err := time.Parse("2006-01-02", s); err != nil {
+	if t, err := time.Parse("2006-01-02", s); err == nil {
 		return t, nil
 	}
 
 	// try M/D/YYYY like "3/6/2025"
-	if t, err := time.Parse("2/1/2006", s); err != nil {
+	if t, err := time.Parse("2/1/2006", s); err == nil {
 		return t, nil
 	}
 
 	// try RFC3339
-	if t, err := time.Parse(time.RFC3339, s); err != nil {
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
 		return t, nil
 	}
 

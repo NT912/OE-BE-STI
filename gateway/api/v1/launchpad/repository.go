@@ -50,6 +50,19 @@ func (r *LaunchpadRepository) FindAllByStatus(status models.LaunchpadStatus) ([]
 	return list, err
 }
 
+func (r *LaunchpadRepository) FindAll(approvedOnly bool) ([]models.Launchpad, error) {
+	var launchpads []models.Launchpad
+	query := r.db.Preload("Course")
+
+	if approvedOnly {
+		query = query.Where("approved = ?", true)
+	}
+
+	err := query.Order("created_at desc").Find(&launchpads).Error
+
+	return launchpads, err
+}
+
 func (r *LaunchpadRepository) CourseExists(courseID uint) (bool, error) {
 	var c models.Course
 	err := r.db.Select("id").First(&c, courseID).Error
