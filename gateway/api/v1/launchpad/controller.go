@@ -34,7 +34,9 @@ func (c *LaunchpadController) RegisterRoutes(r *gin.RouterGroup) {
 		lpRoutesAuth.POST("/", middlewares.RequirePermission(guards.PermCourseCRUD), c.CreateLaunchpad)
 		lpRoutesAuth.POST("/:id/approve", middlewares.RequirePermission(guards.PermCourseCRUD), c.ApproveLaunchpad)
 
-		// invest: any logged-in user can invest (as you wanted)
+		// invest
+		lpRoutesAuth.POST("/:id/invest", c.InvestInLaunchpad)
+
 	}
 }
 
@@ -119,4 +121,46 @@ func (c *LaunchpadController) ApproveLaunchpad(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, launchpad)
+}
+
+func (c *LaunchpadController) InvestInLaunchpad(ctx *gin.Context) {
+	// Get Launchpad ID from URL
+	idStr := ctx.Param("id")
+	launchpadID, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "invailid launchpad id",
+		})
+		return
+	}
+
+	// Get UserID from auth middleware
+	userIdValue, _ := ctx.Get("userId")
+	userID, ok := userIdValue.(uint)
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"error": "invalid user id type",
+		})
+		return
+	}
+
+	// Get amount from request body
+	var dto InvestDTO
+	if err := ctx.ShouldBindJSON(&dto); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Call service
+	updatedLaunchpad, err := c.service.InvestInLaunchpad(userID, uint(launchpadID), dto.Amount)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, updatedLaunchpad)
 }

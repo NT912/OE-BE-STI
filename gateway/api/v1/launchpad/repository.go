@@ -1,6 +1,7 @@
 package launchpad
 
 import (
+	"log"
 	"time"
 
 	"gateway/models"
@@ -77,4 +78,25 @@ func (r *LaunchpadRepository) CourseExists(courseID uint) (bool, error) {
 
 func (r *LaunchpadRepository) UpdateNextVotingAt(lpID uint, t *time.Time) error {
 	return r.db.Model(&models.Launchpad{}).Where("id=?", lpID).Update("next_voting_at", t).Error
+}
+
+func (r *LaunchpadRepository) FindInvestment(userID uint, launchpadID uint) (*models.LaunchpadInvestment, error) {
+	var investment models.LaunchpadInvestment
+	err := r.db.Where("user_id = ? AND launchpad_id = ?", userID, launchpadID).First(&investment).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		log.Printf("FindInvestment error: %v", err)
+		return nil, err
+	}
+	return &investment, nil
+}
+
+func (r *LaunchpadRepository) CreateInvestment(investment *models.LaunchpadInvestment) error {
+	return r.db.Create(investment).Error
+}
+
+func (r *LaunchpadRepository) UpdateInvestment(investment *models.LaunchpadInvestment) error {
+	return r.db.Save(investment).Error
 }

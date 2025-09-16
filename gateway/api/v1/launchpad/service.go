@@ -127,3 +127,62 @@ func parseDateFlexible(s string) (time.Time, error) {
 
 	return time.Time{}, errors.New("invalid date format, use YYYY-MM-DD")
 }
+
+func (s *LaunchpadService) InvestInLaunchpad(userID uint, launchpadID uint, amount float64) (*models.Launchpad, error) {
+	// Get launchpad by ID
+	launchpad, err := s.repo.FindByID(launchpadID)
+	if err != nil {
+		return nil, err
+	}
+
+	// check approved launchpad
+	if !launchpad.Approved {
+		return nil, errors.New("Cannot invest in a launchpad that is not approved")
+	}
+
+	// Phần trừ tiền trong wallet của user
+	// Khi WalletService sẵn sàng, thì inject vào đây
+	// _, err := s.WalletService.Debit(userID, amount)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// Check if user has already invested
+	existingInvestment, err := s.repo.FindInvestment(userID, launchpadID)
+	if err != nil {
+		return nil, err
+	}
+
+	if existingInvestment == nil {
+		// New investor
+		launchpad.Backers += 1
+		// Create new investment record
+		newInvestment := &models.LaunchpadInvestment{
+			UserID:      userID,
+			LaunchpadID: launchpadID,
+			Amount:      amount,
+		}
+		if err := s.repo.CreateInvestment(newInvestment); err != nil {
+			return nil, err
+		}
+	} else {
+		// Existing investor, just update amount
+		existingInvestment.Amount += amount
+		if err := s.repo.UpdateInvestment(existingInvestment); err != nil {
+			return nil, err
+		}
+	}
+
+	// Update total funded amount for the launchpad
+	launchpad.Funded += amount
+
+	// Update launchpad status based on new funds
+	launchpad.Status = calculateStatus(launchpad.FundingGoal, launchpad.Funded)
+
+	// Save changes
+	if err := s.repo.Update(launchpad); err != nil {
+		return nil, err
+	}
+
+	return launchpad, nil
+}
