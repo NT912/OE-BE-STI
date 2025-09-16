@@ -75,6 +75,10 @@ func (s *LaunchpadService) GetLaunchpadByID(id uint) (*models.Launchpad, error) 
 	return s.repo.FindByID(id)
 }
 
+func (s *LaunchpadService) GetLaunchpads() ([]models.Launchpad, error) {
+	return s.repo.FindAll(true)
+}
+
 // Goal will be input by investor
 func calculateStatus(goal, funded float64) models.LaunchpadStatus {
 	if funded <= 0 || goal <= 0 {

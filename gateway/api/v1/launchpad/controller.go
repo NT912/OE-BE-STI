@@ -22,7 +22,7 @@ func NewLaunchpadController(s *LaunchpadService) *LaunchpadController {
 func (c *LaunchpadController) RegisterRoutes(r *gin.RouterGroup) {
 	lpRoutes := r.Group("/launchpads")
 	{
-		lpRoutes.GET("/")
+		lpRoutes.GET("/", c.GetLaunchpads)
 		lpRoutes.GET("/:id", c.GetLaunchpadByID)
 	}
 
@@ -80,4 +80,16 @@ func (c *LaunchpadController) GetLaunchpadByID(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, launchpad)
+}
+
+func (c *LaunchpadController) GetLaunchpads(ctx *gin.Context) {
+	launchpads, err := c.service.GetLaunchpads()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, launchpads)
 }
