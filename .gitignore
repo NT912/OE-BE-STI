@@ -47,3 +47,4 @@ tmp/
 .env.*
 !.env.example
 /.history
+/img
