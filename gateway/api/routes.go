@@ -2,6 +2,7 @@ package routes
 
 import (
 	v1 "gateway/api/v1"
+	"gateway/rpc"
 
 	"gateway/api/v1/auth"
 	"gateway/api/v1/courses"
@@ -14,7 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitRouter() *gin.Engine {
+func InitRouter(rpcClient *rpc.RPCClient) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
@@ -22,7 +23,7 @@ func InitRouter() *gin.Engine {
 	// r.Use(middlewares.ResponseFormatter())
 	r.GET("/api/v1/health", v1.HealthCheck)
 	wallets.InitModule()
-	users.InitModule(r)
+	users.InitModule(r, rpcClient)
 	auth.InitModule(r)
 	courses.InitModule(r)
 	launchpad.InitModule(r)

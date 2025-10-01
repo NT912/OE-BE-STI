@@ -7,22 +7,44 @@ import (
 
 	"gateway/configs"
 	"gateway/models"
+	"gateway/rpc"
 	"gateway/utils"
 
 	"github.com/streadway/amqp"
 )
 
 type UserService struct {
-	repo *UserRepository
+	repo      *UserRepository
+	rpcClient *rpc.RPCClient
 }
 
-func NewUserService(repo *UserRepository) *UserService {
-	return &UserService{repo: repo}
+func NewUserService(repo *UserRepository, rpcClient *rpc.RPCClient) *UserService {
+	return &UserService{
+		repo:      repo,
+		rpcClient: rpcClient,
+	}
 }
 
 type UserRegisteredPayload struct {
 	Email string `json:"email"`
 	Name  string `json:"name"`
+}
+
+func (s *UserService) GetWelcomeEmailPreview(name string) (string, error) {
+	log.Printf("Requesting email preview for name: %s", name)
+	request := map[string]interface{}{
+		"template": "welcome.html",
+		"data": map[string]interface{}{
+			"name": name,
+		},
+	}
+
+	responseBody, err := s.rpcClient.Call("rpc_queue", request)
+	if err != nil {
+		return "", fmt.Errorf("Failed to call RPC: %w", err)
+	}
+
+	return string(responseBody), nil
 }
 
 func (s *UserService) publishUserRegister(email, name string) {

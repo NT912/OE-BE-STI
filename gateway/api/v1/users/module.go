@@ -1,8 +1,11 @@
 package users
 
 import (
+	"log"
+
 	"gateway/configs"
 	"gateway/models"
+	"gateway/rpc"
 	"gateway/utils"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +17,7 @@ var (
 	UserSvc  *UserService
 )
 
-func InitModule(r *gin.Engine) {
+func InitModule(r *gin.Engine, rpcClient *rpc.RPCClient) {
 	db := configs.DB
 	if configs.Env.AppEnv != "production" {
 		db.AutoMigrate(&models.User{})
@@ -34,9 +37,19 @@ func InitModule(r *gin.Engine) {
 	}
 
 	UserRepo = NewUserRepository(db)
-	UserSvc = NewUserService(UserRepo)
+	UserSvc = NewUserService(UserRepo, rpcClient)
 	controller := NewUserController(UserSvc)
 
 	api := r.Group("/api/v1")
 	controller.RegisterRoutes(api)
+}
+
+func InitRPC() *rpc.RPCClient {
+	rpcClient, err := rpc.NewRPCClient()
+	if err != nil {
+		log.Fatalf("Failed to init RPC client: %v", err)
+	}
+
+	log.Println("✅ RPC Client initialized")
+	return rpcClient
 }

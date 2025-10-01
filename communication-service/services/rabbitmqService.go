@@ -28,7 +28,7 @@ func NewRabbitMQService() *RabbitMQService {
 	}
 }
 
-func (s *RabbitMQService) Consume(handler func(d amqp.Delivery)) {
+func (s *RabbitMQService) SetupPubSubConsume(handler func(d amqp.Delivery)) {
 	err := s.channel.ExchangeDeclare(
 		"user_events", // name
 		"topic",       // type
@@ -75,15 +75,13 @@ func (s *RabbitMQService) Consume(handler func(d amqp.Delivery)) {
 	if err != nil {
 		log.Fatalf("Failed to register a consumer: %s", err)
 	}
-	forever := make(chan bool)
-
 	go func() {
 		for d := range msgs {
 			handler(d)
 		}
 	}()
-	log.Print("[*] Waiting for messages on exchange 'user_events'. To exit press Ctrl+C")
-	<-forever
+
+	log.Printf("[*] Pub/Sub consumer is waiting for messages on exchange 'user_envents'.")
 }
 
 func (s *RabbitMQService) Close() {
@@ -91,7 +89,7 @@ func (s *RabbitMQService) Close() {
 	s.conn.Close()
 }
 
-func (s *RabbitMQService) ConsumeRPC(handler func(d amqp.Delivery, ch *amqp.Channel)) {
+func (s *RabbitMQService) SetupRPCConsumer(handler func(d amqp.Delivery, ch *amqp.Channel)) {
 	q, err := s.channel.QueueDeclare(
 		"rpc_queue",
 		true,
@@ -122,11 +120,11 @@ func (s *RabbitMQService) ConsumeRPC(handler func(d amqp.Delivery, ch *amqp.Chan
 		log.Fatalf("Failed to register RPC consumer: %s", err)
 	}
 
-	log.Printf("[*] Waiting for RPC request on 'rpc_queue'.")
-
 	go func() {
 		for d := range msgs {
 			handler(d, s.channel)
 		}
 	}()
+
+	log.Printf("[*] RPC consumer is waiting for request on 'rpc_queue'.")
 }
