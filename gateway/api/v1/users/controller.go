@@ -22,7 +22,22 @@ func (c *UserController) RegisterRoutes(r *gin.RouterGroup) {
 		userRoutes.GET("/", c.GetUsers)
 		userRoutes.GET("/:id", c.GetUserByID)
 		userRoutes.PUT("/:id/role", c.UpdateUserRole)
+
+		userRoutes.GET("/preview", c.GetPreview)
 	}
+}
+
+func (c *UserController) GetPreview(ctx *gin.Context) {
+	name := ctx.DefaultQuery("name", "Guest")
+	html, err := c.service.GetWelcomeEmailPreview(name)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	ctx.Data(http.StatusOK, "text/html;charset=utf-8", []byte(html))
 }
 
 func (c *UserController) CreateUser(ctx *gin.Context) {
