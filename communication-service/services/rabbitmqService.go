@@ -90,3 +90,43 @@ func (s *RabbitMQService) Close() {
 	s.channel.Close()
 	s.conn.Close()
 }
+
+func (s *RabbitMQService) ConsumeRPC(handler func(d amqp.Delivery, ch *amqp.Channel)) {
+	q, err := s.channel.QueueDeclare(
+		"rpc_queue",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		log.Fatalf("Failed to declare RPC queue: %s", err)
+	}
+
+	err = s.channel.Qos(1, 0, false)
+	if err != nil {
+		log.Fatalf("Failed to ser Qos: %s", err)
+	}
+
+	msgs, err := s.channel.Consume(
+		q.Name,
+		"",
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		log.Fatalf("Failed to register RPC consumer: %s", err)
+	}
+
+	log.Printf("[*] Waiting for RPC request on 'rpc_queue'.")
+
+	go func() {
+		for d := range msgs {
+			handler(d, s.channel)
+		}
+	}()
+}

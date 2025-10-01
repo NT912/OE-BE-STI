@@ -23,9 +23,11 @@ func main() {
 
 	rabbitHandler := handler.NewRabbitHandler()
 
-	rabbitService.Consume(rabbitHandler.HandlerMessage)
+	go rabbitService.Consume(rabbitHandler.HandlerMessage)
+	go rabbitService.ConsumeRPC(rabbitHandler.HandleRPCRequest)
 
 	quit := make(chan os.Signal, 1)
+
 	signal.Notify(quit, os.Interrupt)
 	<-quit
 
