@@ -1,4 +1,4 @@
-package rpc
+package rabbitmq
 
 import (
 	"encoding/json"
@@ -6,8 +6,6 @@ import (
 	"log"
 	"sync"
 	"time"
-
-	"gateway/configs"
 
 	"github.com/google/uuid"
 	"github.com/streadway/amqp"
@@ -21,9 +19,7 @@ type RPCClient struct {
 	mu      sync.Mutex
 }
 
-func NewRPCClient() (*RPCClient, error) {
-	ch := configs.RabbitChannel
-
+func newRPCClient(ch *amqp.Channel) (*RPCClient, error) {
 	if ch == nil {
 		return nil, errors.New("RabbitMQ channel is not initialized")
 	}
@@ -60,7 +56,6 @@ func NewRPCClient() (*RPCClient, error) {
 		corrMap: make(map[string]chan []byte),
 	}
 	go client.handleReplies()
-
 	return client, nil
 }
 
@@ -93,7 +88,6 @@ func (c *RPCClient) Call(rpcQueue string, requestBody interface{}) ([]byte, erro
 	if err != nil {
 		return nil, err
 	}
-
 	err = c.ch.Publish(
 		"",
 		rpcQueue,
@@ -109,12 +103,10 @@ func (c *RPCClient) Call(rpcQueue string, requestBody interface{}) ([]byte, erro
 		return nil, err
 	}
 	log.Printf("[x] Sent RPC request with CorrID: %s", corrID)
-
 	select {
 	case res := <-callback:
 		log.Printf("[.] Got RPC response for CorrID: %s", corrID)
 		return res, nil
-
 	case <-time.After(5 * time.Second):
 		return nil, errors.New("RPC request timed out")
 	}

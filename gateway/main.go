@@ -11,22 +11,21 @@ import (
 	"time"
 
 	routes "gateway/api"
-	"gateway/api/v1/users"
 	"gateway/configs"
+	"gateway/rabbitmq"
 )
 
 func init() {
 	configs.InitEnv()
-
-	log.Println("Connecting to RabbitMQ at:", configs.Env.RabbitMQURL)
 	configs.ConnectDatabase()
-	configs.ConnectRabbitMQ()
 }
 
 func main() {
-	rpcClient := users.InitRPC()
+	rabbitMQModule := rabbitmq.InitModule(configs.Env.RabbitMQURL)
+	defer rabbitMQModule.Conn.Close()
+	defer rabbitMQModule.Channel.Close()
 
-	routersInit := routes.InitRouter(rpcClient)
+	routersInit := routes.InitRouter(rabbitMQModule)
 	port := configs.Env.Port
 
 	endPoint := fmt.Sprintf("%s:%s", "0.0.0.0", port)

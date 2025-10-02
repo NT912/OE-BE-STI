@@ -1,11 +1,9 @@
 package users
 
 import (
-	"log"
-
 	"gateway/configs"
 	"gateway/models"
-	"gateway/rpc"
+	"gateway/rabbitmq"
 	"gateway/utils"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +15,7 @@ var (
 	UserSvc  *UserService
 )
 
-func InitModule(r *gin.Engine, rpcClient *rpc.RPCClient) {
+func InitModule(r *gin.Engine, rabbitMQModule *rabbitmq.RabbitMQModule) {
 	db := configs.DB
 	if configs.Env.AppEnv != "production" {
 		db.AutoMigrate(&models.User{})
@@ -37,19 +35,9 @@ func InitModule(r *gin.Engine, rpcClient *rpc.RPCClient) {
 	}
 
 	UserRepo = NewUserRepository(db)
-	UserSvc = NewUserService(UserRepo, rpcClient)
+	UserSvc = NewUserService(UserRepo, rabbitMQModule.RPCClient, rabbitMQModule)
 	controller := NewUserController(UserSvc)
 
 	api := r.Group("/api/v1")
 	controller.RegisterRoutes(api)
-}
-
-func InitRPC() *rpc.RPCClient {
-	rpcClient, err := rpc.NewRPCClient()
-	if err != nil {
-		log.Fatalf("Failed to init RPC client: %v", err)
-	}
-
-	log.Println("✅ RPC Client initialized")
-	return rpcClient
 }

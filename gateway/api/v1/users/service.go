@@ -5,23 +5,22 @@ import (
 	"fmt"
 	"log"
 
-	"gateway/configs"
 	"gateway/models"
-	"gateway/rpc"
+	"gateway/rabbitmq"
 	"gateway/utils"
-
-	"github.com/streadway/amqp"
 )
 
 type UserService struct {
-	repo      *UserRepository
-	rpcClient *rpc.RPCClient
+	repo           *UserRepository
+	rpcClient      *rabbitmq.RPCClient
+	rabbitMQModule *rabbitmq.RabbitMQModule
 }
 
-func NewUserService(repo *UserRepository, rpcClient *rpc.RPCClient) *UserService {
+func NewUserService(repo *UserRepository, rpcClient *rabbitmq.RPCClient, rabbitMQModule *rabbitmq.RabbitMQModule) *UserService {
 	return &UserService{
-		repo:      repo,
-		rpcClient: rpcClient,
+		repo:           repo,
+		rpcClient:      rpcClient,
+		rabbitMQModule: rabbitMQModule,
 	}
 }
 
@@ -58,15 +57,10 @@ func (s *UserService) publishUserRegister(email, name string) {
 		return
 	}
 
-	err = configs.RabbitChannel.Publish(
+	err = s.rabbitMQModule.Publish(
 		"user_events",
 		"user.registered",
-		false,
-		false,
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        body,
-		},
+		body,
 	)
 	if err != nil {
 		log.Printf("Failed to publish user.registered event: %v", err)
