@@ -15,7 +15,7 @@ var (
 	UserSvc  *UserService
 )
 
-func InitModule(r *gin.Engine, rabbitMQModule *rabbitmq.RabbitMQModule) {
+func InitModule(r *gin.Engine) {
 	db := configs.DB
 	if configs.Env.AppEnv != "production" {
 		db.AutoMigrate(&models.User{})
@@ -35,7 +35,7 @@ func InitModule(r *gin.Engine, rabbitMQModule *rabbitmq.RabbitMQModule) {
 	}
 
 	UserRepo = NewUserRepository(db)
-	UserSvc = NewUserService(UserRepo, rabbitMQModule.RPCClient, rabbitMQModule)
+	UserSvc = NewUserService(UserRepo, rabbitmq.RabbitSvc)
 	controller := NewUserController(UserSvc)
 
 	api := r.Group("/api/v1")

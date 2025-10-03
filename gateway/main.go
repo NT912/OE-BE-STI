@@ -18,14 +18,13 @@ import (
 func init() {
 	configs.InitEnv()
 	configs.ConnectDatabase()
+	rabbitmq.InitModule()
 }
 
 func main() {
-	rabbitMQModule := rabbitmq.InitModule(configs.Env.RabbitMQURL)
-	defer rabbitMQModule.Conn.Close()
-	defer rabbitMQModule.Channel.Close()
+	defer rabbitmq.RabbitSvc.Close()
 
-	routersInit := routes.InitRouter(rabbitMQModule)
+	routersInit := routes.InitRouter()
 	port := configs.Env.Port
 
 	endPoint := fmt.Sprintf("%s:%s", "0.0.0.0", port)

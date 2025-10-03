@@ -11,16 +11,14 @@ import (
 )
 
 type UserService struct {
-	repo           *UserRepository
-	rpcClient      *rabbitmq.RPCClient
-	rabbitMQModule *rabbitmq.RabbitMQModule
+	repo      *UserRepository
+	rabbitSvc *rabbitmq.RabbitMQService
 }
 
-func NewUserService(repo *UserRepository, rpcClient *rabbitmq.RPCClient, rabbitMQModule *rabbitmq.RabbitMQModule) *UserService {
+func NewUserService(repo *UserRepository, rabbitSvc *rabbitmq.RabbitMQService) *UserService {
 	return &UserService{
-		repo:           repo,
-		rpcClient:      rpcClient,
-		rabbitMQModule: rabbitMQModule,
+		repo:      repo,
+		rabbitSvc: rabbitSvc,
 	}
 }
 
@@ -38,7 +36,7 @@ func (s *UserService) GetWelcomeEmailPreview(name string) (string, error) {
 		},
 	}
 
-	responseBody, err := s.rpcClient.Call("rpc_queue", request)
+	responseBody, err := s.rabbitSvc.Call("rpc_queue", request)
 	if err != nil {
 		return "", fmt.Errorf("Failed to call RPC: %w", err)
 	}
@@ -57,7 +55,7 @@ func (s *UserService) publishUserRegister(email, name string) {
 		return
 	}
 
-	err = s.rabbitMQModule.Publish(
+	err = s.rabbitSvc.Publish(
 		"user_events",
 		"user.registered",
 		body,

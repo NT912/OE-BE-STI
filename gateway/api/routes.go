@@ -2,7 +2,6 @@ package routes
 
 import (
 	v1 "gateway/api/v1"
-	"gateway/rabbitmq"
 
 	"gateway/api/v1/auth"
 	"gateway/api/v1/courses"
@@ -15,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitRouter(rabbitMQModule *rabbitmq.RabbitMQModule) *gin.Engine {
+func InitRouter() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
@@ -23,7 +22,7 @@ func InitRouter(rabbitMQModule *rabbitmq.RabbitMQModule) *gin.Engine {
 	// r.Use(middlewares.ResponseFormatter())
 	r.GET("/api/v1/health", v1.HealthCheck)
 	wallets.InitModule()
-	users.InitModule(r, rabbitMQModule)
+	users.InitModule(r)
 	auth.InitModule(r)
 	courses.InitModule(r)
 	launchpad.InitModule(r)
