@@ -22,14 +22,15 @@ func main() {
 
 	rabbitService := services.NewRabbitMQService()
 	defer rabbitService.Close()
+	aiService := services.NewAiService()
 
 	rabbitHandler := handler.NewRabbitHandler()
+	httpHandler := handler.NewHttpHandler(aiService)
 
 	rabbitService.SetupPubSubConsume(rabbitHandler.HandlerMessage)
 	rabbitService.SetupRPCConsumer(rabbitHandler.HandleRPCRequest)
 
 	r := gin.Default()
-	httpHandler := handler.NewHttpHandler()
 	httpHandler.RegisterRoutes(r)
 
 	go func() {
