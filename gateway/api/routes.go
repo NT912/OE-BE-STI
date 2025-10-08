@@ -3,6 +3,7 @@ package routes
 import (
 	v1 "gateway/api/v1"
 
+	"gateway/api/v1/ai"
 	"gateway/api/v1/auth"
 	"gateway/api/v1/courses"
 	"gateway/api/v1/launchpad"
@@ -27,6 +28,7 @@ func InitRouter() *gin.Engine {
 	courses.InitModule(r)
 	launchpad.InitModule(r)
 	newsfeed.InitModule(r)
+	ai.InitModule(r)
 
 	return r
 }
