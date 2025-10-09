@@ -1,11 +1,18 @@
 package services
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+
+	"communication-service/configs"
 )
+
+const OpenAIEndpoint = "https://api.openai.com/v1/chat/completions"
 
 type AiService struct{}
 
@@ -13,38 +20,44 @@ func NewAiService() *AiService {
 	return &AiService{}
 }
 
-func (s *AiService) GetAIStream(writer io.Writer) error {
-	responseWords := []string{
-		"Trong ", "một ", "thế ", "giới ", "ngày ", "càng ", "phát ", "triển, ", "trí ", "tuệ ", "nhân ", "tạo ",
-		"đã ", "trở ", "thành ", "một ", "phần ", "thiết ", "yếu ", "trong ", "cuộc ", "sống ", "của ", "chúng ", "ta. ",
-		"Từ ", "những ", "ứng ", "dụng ", "đơn ", "giản ", "như ", "gợi ", "ý ", "từ ", "khóa, ",
-		"cho ", "đến ", "các ", "hệ ", "thống ", "phức ", "tạp ", "có ", "khả ", "năng ", "học ", "hỏi ", "và ", "thích ", "nghi, ",
-		"AI ", "đang ", "dần ", "thay ", "đổi ", "cách ", "con ", "người ", "làm ", "việc ", "và ", "sáng ", "tạo. ",
-		"Khi ", "bạn ", "đọc ", "những ", "dòng ", "chữ ", "này, ", "rất ", "có ", "thể ", "một ", "mô ", "hình ", "AI ",
-		"đang ", "xử ", "lý ", "hàng ", "triệu ", "tác ", "vụ ", "trong ", "một ", "giây, ", "học ", "từ ", "hàng ", "tỷ ", "dữ ", "liệu ",
-		"để ", "hiểu ", "về ", "ngôn ", "ngữ, ", "về ", "con ", "người, ", "và ", "về ", "thế ", "giới ", "xung ", "quanh. ",
-		"Điều ", "thú ", "vị ", "là, ", "những ", "phản ", "hồi ", "bạn ", "nhận ", "được ", "ở ", "đây ",
-		"không ", "phải ", "chỉ ", "là ", "chuỗi ", "ký ", "tự, ", "mà ", "là ", "kết ", "quả ", "của ",
-		"hàng ", "triệu ", "tính ", "toán ", "song ", "song ", "được ", "thực ", "hiện ", "chỉ ", "trong ", "chớp ", "mắt. ",
-		"Và ", "tất ", "cả ", "những ", "điều ", "đó ", "đang ", "được ", "stream ", "từng ", "chút ",
-		"một, ", "đến ", "màn ", "hình ", "của ", "bạn, ", "theo ", "thời ", "gian ", "thực. ",
-		"Đây ", "là ", "sức ", "mạnh ", "của ", "AI ", "thật ", "sự.",
+func (s *AiService) GetAIStream(prompt string, writer io.Writer) error {
+	requestBody := OpenAIRequest{
+		Model: "gpt-5",
+		Messages: []Message{
+			{Role: "user", Content: prompt},
+		},
+		Stream: true,
 	}
 
-	flusher, ok := writer.(http.Flusher)
-	if !ok {
-		return fmt.Errorf("streaming unsupported")
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("Error marshalling openai request: %w", err)
 	}
 
-	for _, word := range responseWords {
-		_, err := fmt.Fprint(writer, word)
-		if err != nil {
-			return err
-		}
-		flusher.Flush()
-		log.Printf("Sent Chunk: %s", word)
-		// time.Sleep(200 * time.Millisecond)
+	req, err := http.NewRequest("POST", OpenAIEndpoint, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("Error creating openai request: %w", err)
 	}
-	log.Println("Finished streaming AI response.")
-	return nil
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+configs.Env.OpenAIAPIKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Error performing openai request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		errorMsg := fmt.Sprintf("Openai api returned an error: %s - %s", resp.Status, string(body))
+		log.Println(errorMsg)
+		fmt.Fprint(writer, errorMsg)
+
+		return errors.New(errorMsg)
+	}
+
+	_, err = io.Copy(writer, resp.Body)
+	return err
 }

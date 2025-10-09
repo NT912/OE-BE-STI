@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"log"
+	"net/http"
 
 	"communication-service/services"
 
@@ -32,14 +33,22 @@ func (h *HttpHandler) RegisterRoutes(r *gin.Engine) {
 }
 
 func (h *HttpHandler) handleAiStream(ctx *gin.Context) {
-	log.Println("Received request from gateway to stream AI response.")
+	var req services.ChatRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+		})
+		return
+	}
+
+	log.Printf("Received request from gateway with prompt: %s", req.Prompt)
 
 	ctx.Header("Content-Type", "text/event-stream")
-	ctx.Header("Cache-control", "no-cache")
+	ctx.Header("Cache-Control", "no-cache")
 	ctx.Header("Connection", "keep-alive")
 
-	err := h.aiService.GetAIStream(ctx.Writer)
+	err := h.aiService.GetAIStream(req.Prompt, ctx.Writer)
 	if err != nil {
-		log.Printf("Error during AI stream: %v", err)
+		log.Printf("Error from AiService stream: %v", err)
 	}
 }

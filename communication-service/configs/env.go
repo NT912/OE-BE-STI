@@ -27,6 +27,8 @@ type Environment struct {
 	SMTPUser    string
 	SMTPPass    string
 	RabbitMQURL string
+
+	OpenAIAPIKey string `env:"OPENAI_API_KEY"`
 }
 
 var Env Environment
