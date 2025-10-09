@@ -7,10 +7,24 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/gorilla/websocket"
 )
 
 type AiService struct {
 	CommServiceURL string
+}
+
+type SocketWriter struct {
+	Conn *websocket.Conn
+}
+
+func (sw *SocketWriter) Write(p []byte) (n int, err error) {
+	err = sw.Conn.WriteMessage(websocket.TextMessage, p)
+	if err != nil {
+		return 0, err
+	}
+	return len(p), nil
 }
 
 func NewAiService() *AiService {
